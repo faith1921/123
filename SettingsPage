@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+  <style>
+    /* ========== 全域 & 基本樣式 ========== */
+    body { font-family: 'Roboto', Arial, sans-serif; background-color: #f4f5f7; color: #333; margin: 20px; }
+    .container { max-width: 1200px; margin: auto; background: white; padding: 20px 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+    h1 { color: #172b4d; text-align: center; }
+    h2 { color: #0747a6; border-bottom: 2px solid #dfe1e6; padding-bottom: 8px; margin-top: 40px; }
+    .section { margin-bottom: 30px; }
+    input, textarea { width: 95%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+    textarea { min-height: 120px; resize: vertical; }
+    .btn { background-color: #0052cc; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+    .btn:hover { background-color: #0065ff; }
+    .btn-danger { background-color: #de350b; }
+    .btn-danger:hover { background-color: #bf2600; }
+    .btn-add { background-color: #00875a; margin-top: 10px; }
+    .btn-add:hover { background-color: #006644; }
+    #status { text-align: center; min-height: 20px; font-weight: bold; padding: 10px; }
+    .loading { color: #0052cc; } .success { color: #00875a; } .error { color: #de350b; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #dfe1e6; padding: 12px; text-align: left; vertical-align: top; }
+    th { background-color: #f4f5f7; font-weight: 600; }
+    .rule-card { border: 1px solid #dfe1e6; border-radius: 4px; padding: 15px; margin-bottom: 15px; background-color: #fafbfc; }
+    .rule-grid { display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 15px; align-items: center; }
+    .rule-grid .input-group, .simulation-grid .input-group { display: flex; flex-direction: column; }
+    .rule-grid label, .simulation-grid label { font-size: 12px; color: #5e6c84; margin-bottom: 4px; }
+    .full-width-input { margin-top: 15px; }
+    .full-width-input label { font-size: 12px; color: #5e6c84; margin-bottom: 4px; display: block; }
+    .full-width-input textarea { width: 100%; }
+    .section-save { text-align: right; margin-top: 20px; }
+    .format-guide { font-size: 12px; color: #5e6c84; background-color: #f4f5f7; padding: 8px; border-radius: 3px; margin-top: 5px; }
+
+    /* ========== 頁籤 (Tab) 介面樣式 ========== */
+    .tabs-container { display: flex; border-bottom: 2px solid #dfe1e6; margin-bottom: 25px; }
+    .tab-link { font-size: 16px; font-weight: 500; color: #5e6c84; background: none; border: none; padding: 10px 20px; cursor: pointer; border-bottom: 3px solid transparent; }
+    .tab-link:hover { background-color: #f4f5f7; }
+    .tab-link.active { color: #0052cc; border-bottom: 3px solid #0052cc; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ========== 模擬區塊與 Choices.js 樣式 ========== */
+    .simulation-grid .input-group input,
+    .simulation-grid .input-group .choices__inner { height: 38px; min-height: 38px; box-sizing: border-box; display: flex; align-items: center; }
+    .simulation-grid .input-group input { padding: 8px; }
+    .simulation-grid .choices__inner { padding-left: 8px; }
+    .simulation-grid .choices__inner .choices__list--single .choices__item { padding: 0; }
+    .choices { margin-bottom: 0; }
+    .choices__inner { background-color: #fff; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+    .choices__input { font-size: 14px; background-color: #fff; }
+    .choices[data-type*="select-one"]::after { border-color: #333 transparent transparent; }
+    .choices.is-open[data-type*="select-one"]::after { border-color: transparent transparent #333; margin-top: -2.5px; }
+    .choices.is-disabled .choices__inner { background-color: #eff2f7; cursor: not-allowed; }
+    .choices.is-disabled .choices__input { background-color: #eff2f7; }
+    .test-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: white; }
+
+    /* ========== 代數說明樣式 ========== */
+    .placeholder-guide { font-size: 13px; color: #42526e; background-color: #e3fcef; border: 1px solid #abf5d1; padding: 10px 15px; border-radius: 4px; margin-top: 10px; }
+    .placeholder-guide strong { color: #006644; display: block; margin-bottom: 8px; }
+    .placeholder-guide ul { margin: 0; padding-left: 20px; }
+    .placeholder-guide li { margin-bottom: 5px; }
+    .placeholder-guide code { background-color: #ccefe5; padding: 2px 5px; border-radius: 3px; font-family: 'Courier New', Courier, monospace; font-weight: 600; }
+    .placeholder-buttons-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; margin-bottom: 8px; }
+    .placeholder-btn { background-color: #dfe1e6; color: #172b4d; border: none; border-radius: 4px; padding: 4px 10px; font-size: 13px; font-family: 'Courier New', Courier, monospace; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+    .placeholder-btn:hover { background-color: #c1c7d0; }
+
+    /* ========== 彈出狀態訊息 ========== */
+    #customStatus { visibility: hidden; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background-color: #2c3e50; color: white; padding: 12px 24px; border-radius: 25px; font-size: 16px; z-index: 1000; opacity: 0; transition: opacity 0.5s, visibility 0.5s, top 0.5s; }
+    #customStatus.show { visibility: visible; opacity: 1; top: 40px; }
+    #customStatus.success { background-color: #27ae60; }
+    #customStatus.error { background-color: #c0392b; }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>儀器校正通知系統設定</h1>
+    <div id="status"></div>
+
+    <div class="tabs-container">
+      <button class="tab-link active" data-tab-target="#tab-general">通知信件內容設定</button>
+      <button class="tab-link" data-tab-target="#tab-mappings">信件寄送Email設定</button>
+      <button class="tab-link" data-tab-target="#tab-simulation">通知信件測試</button>
+    </div>
+
+    <div id="tab-general" class="tab-content active">
+      <div class="section">
+        <h2>通知信件內容設定</h2>
+        <div id="notificationRulesContainer"></div><button type="button" class="btn btn-add" onclick="addRuleCard()">新增規則</button>
+      </div>
+    </div>
+
+    <div id="tab-mappings" class="tab-content">
+      <div class="section">
+        <h2>固定副本收件人</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%;">設定項目</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>固定副本收件人 (CC)</td>
+              <td><textarea id="globalCcEmails" rows="3" placeholder="所有固定要收到副本的 Email，請用逗號 (,) 隔開"></textarea></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section">
+        <h2>保管人</h2>
+        <table id="personnelMapTable">
+          <thead>
+            <tr>
+              <th>保管人名稱</th>
+              <th>保管人Email</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table><button type="button" class="btn btn-add" onclick="addRow('personnelMapTable')">新增保管人</button>
+      </div>
+      <div class="section">
+        <h2>組別</h2>
+        <table id="groupMapTable">
+          <thead>
+            <tr>
+              <th>組別名稱</th>
+              <th>組別 Email</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table><button type="button" class="btn btn-add" onclick="addRow('groupMapTable')">新增組別</button>
+      </div>
+      <div class="section">
+        <h2>特定條件額外副本收件人</h2>
+        <table id="additionalCcMapTable">
+          <thead>
+            <tr>
+              <th>特定條件 (儀器/組別)</th>
+              <th>額外副本收件人</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table><button type="button" class="btn btn-add" onclick="addRow('additionalCcMapTable')">新增額外副本收件人</button>
+      </div>
+      <div class="section">
+        <h2>排除儀器通知寄送清單</h2><textarea id="exclusionList" rows="8" placeholder="一個儀器編號或前綴詞佔一行"></textarea>
+      </div>
+    </div>
+
+    <div id="tab-simulation" class="tab-content">
+      <div class="section">
+        <h2>通知信件模擬</h2>
+        <div class="rule-card">
+          <p style="font-size: 14px; color: #5e6c84; margin-top: 0;">請從下方選擇或輸入儀器資訊來模擬通知信件寄送。</p>
+          <div class="simulation-grid rule-grid" style="grid-template-columns: 1.5fr 1fr 1fr 1fr; align-items: end;">
+            <div class="input-group"><label for="instrumentIdTest">儀器編號</label><input type="text" id="instrumentIdTest" list="instrumentIdSuggestions" placeholder="輸入或選擇儀器">
+              <datalist id="instrumentIdSuggestions"></datalist>
+            </div>
+            <div class="input-group"><label for="daysUntilDueTest">距離校正天數</label><input type="number" id="daysUntilDueTest" placeholder="例如：35"></div>
+            <div class="input-group"><label for="custodianTest">保管人 (名稱)</label><select id="custodianTest"></select></div>
+            <div class="input-group"><label for="groupTest">儀器組別 (名稱)</label><select id="groupTest"></select></div>
+          </div>
+          <div class="section-save" style="margin-top: 15px; text-align: left;"><button class="btn" onclick="runTestSimulation()">開始模擬</button></div>
+        </div>
+        <div id="testResultContainer" style="margin-top: 20px;"></div>
+      </div>
+    </div>
+
+    <div class="section-save" style="border-top: 2px solid #dfe1e6; padding-top: 20px;">
+      <button class="btn" onclick="saveSettings()">儲存所有設定</button>
+    </div>
+  </div>
+
+  <div id="customStatus"></div>
+
+  <script>
+    // ====================================================================
+    // 全域變數
+    // ====================================================================
+    let testData = {};
+    let instrumentMasterList = [];
+    let custodianChoices, groupChoices;
+
+    // ====================================================================
+    // 事件監聽與初始化
+    // ====================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+      setStatus('讀取中...', 'loading');
+
+      const choicesConfig = {
+        searchResultLimit: 100,
+        itemSelectText: '選擇',
+        shouldSort: false,
+      };
+
+      custodianChoices = new Choices('#custodianTest', { ...choicesConfig,
+        placeholder: true,
+        placeholderValue: '請選擇保管人'
+      });
+      groupChoices = new Choices('#groupTest', { ...choicesConfig,
+        placeholder: true,
+        placeholderValue: '請選擇組別'
+      });
+
+      Promise.all([
+        new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getSettingsForWebApp()),
+        new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getInstrumentsForWebApp())
+      ]).then(([settings, instrumentList]) => {
+        instrumentMasterList = instrumentList || [];
+        populateForm(settings);
+        updateTestInputs();
+        setStatus('讀取完成', 'success');
+        setTimeout(() => setStatus('', ''), 3000);
+      }).catch(error => {
+        handleError(error);
+      });
+
+      const container = document.querySelector('.container');
+
+      container.addEventListener('click', function(e) {
+        // 刪除按鈕邏輯
+        if (e.target && e.target.classList.contains('btn-delete')) {
+          const elementToDelete = e.target.closest('.deletable');
+          if (elementToDelete) {
+            elementToDelete.parentNode.removeChild(elementToDelete);
+            updateTestInputs();
+          }
+        }
+        // 頁籤點擊邏輯
+        if (e.target && e.target.classList.contains('tab-link')) {
+          const tabsContainer = e.target.closest('.tabs-container');
+          tabsContainer.querySelector('.active').classList.remove('active');
+          e.target.classList.add('active');
+
+          const targetContentId = e.target.dataset.tabTarget;
+          document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+          document.querySelector(targetContentId).classList.add('active');
+        }
+      });
+
+      container.addEventListener('input', function(e) {
+        const target = e.target;
+        const table = target.closest('table');
+
+        if (!table || (target.tagName.toLowerCase() !== 'input' && target.tagName.toLowerCase() !== 'textarea')) {
+          return;
+        }
+
+        if (['personnelMapTable', 'groupMapTable'].includes(table.id)) {
+          const cellIndex = target.closest('td').cellIndex;
+          if (cellIndex === 0) {
+            setTimeout(updateTestInputs, 200);
+          }
+        }
+      });
+
+      document.getElementById('instrumentIdTest').addEventListener('input', function(e) {
+        const selectedId = e.target.value;
+        const foundInstrument = instrumentMasterList.find(item => item.id === selectedId);
+        if (foundInstrument) {
+          custodianChoices.setChoiceByValue(foundInstrument.custodian);
+          groupChoices.setChoiceByValue(foundInstrument.group);
+          custodianChoices.disable();
+          groupChoices.disable();
+        } else {
+          custodianChoices.enable();
+          groupChoices.enable();
+        }
+      });
+    });
+
+    // ====================================================================
+    // 資料存取
+    // ====================================================================
+    function saveSettings() {
+      setStatus('儲存中...', 'loading');
+      const settings = {
+        globalCcEmails: document.getElementById('globalCcEmails').value.split(',').map(s => s.trim()).filter(Boolean),
+        exclusionList: document.getElementById('exclusionList').value.split('\n').map(s => s.trim()).filter(Boolean),
+        notificationRules: getDataFromContainer('notificationRulesContainer', '.rule-card'),
+        personnelMap: getDataFromContainer('personnelMapTable', 'tr'),
+        groupMap: getDataFromContainer('groupMapTable', 'tr'),
+        additionalCcMap: getDataFromContainer('additionalCcMapTable', 'tr')
+      };
+      google.script.run.withSuccessHandler(saveSuccess).withFailureHandler(handleError).saveSettings(settings);
+    }
+
+    function getDataFromContainer(containerId, itemSelector) {
+      const container = document.getElementById(containerId);
+      const items = container.querySelectorAll(itemSelector);
+      const data = [];
+      items.forEach(item => {
+        const rowData = [];
+        const inputs = item.querySelectorAll('input, textarea');
+        inputs.forEach(input => rowData.push(input.value));
+        if (rowData.some(val => val.trim() !== '')) {
+          data.push(rowData);
+        }
+      });
+      return data;
+    }
+
+    // ====================================================================
+    // 狀態回饋
+    // ====================================================================
+    function showCustomStatus(message, type = 'success') {
+      const customStatusDiv = document.getElementById('customStatus');
+      customStatusDiv.textContent = message;
+      customStatusDiv.className = type;
+      setTimeout(() => {
+        customStatusDiv.classList.add('show');
+      }, 10);
+      setTimeout(() => {
+        customStatusDiv.classList.remove('show');
+      }, 3000);
+    }
+
+    function saveSuccess(message) {
+      setStatus('', '');
+      showCustomStatus(message, 'success');
+    }
+
+    function handleError(error) {
+      setStatus('', '');
+      showCustomStatus('發生錯誤：' + error.message, 'error');
+    }
+
+    function setStatus(message, className) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.className = className;
+    }
+
+    // ====================================================================
+    // 表單與資料填充
+    // ====================================================================
+    function populateForm(settings) {
+      document.getElementById('globalCcEmails').value = (settings.globalCcEmails || []).join(', ');
+      document.getElementById('exclusionList').value = (settings.exclusionList || []).join('\n');
+      populateRules(settings.notificationRules);
+      populateTable('personnelMapTable', settings.personnelMap);
+      populateTable('groupMapTable', settings.groupMap);
+      populateTable('additionalCcMapTable', settings.additionalCcMap);
+    }
+
+    function populateTable(tableId, data) {
+      const tableBody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = '';
+      if (data) {
+        data.forEach(rowData => addRow(tableId, rowData));
+      }
+    }
+
+    function addRow(tableId, data = []) {
+      const tableBody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+      const newRow = tableBody.insertRow();
+      newRow.className = 'deletable';
+      let cellsHtml = '';
+      const val = (d) => d ?? '';
+      switch (tableId) {
+        case 'personnelMapTable':
+          cellsHtml = `<td><input type="text" value="${val(data[0])}"></td><td><input type="email" value="${val(data[1])}"></td>`;
+          break;
+        case 'groupMapTable':
+          cellsHtml = `<td><input type="text" value="${val(data[0])}"></td><td><input type="email" value="${val(data[1])}"></td>`;
+          break;
+        case 'additionalCcMapTable':
+          cellsHtml = `<td><input type="text" value="${val(data[0])}"></td><td><textarea rows="1" placeholder="多個 Email 請用逗號 (,) 隔開">${val(data[1])}</textarea></td>`;
+          break;
+      }
+      newRow.innerHTML = cellsHtml + '<td><button type="button" class="btn btn-danger btn-delete">刪除</button></td>';
+    }
+
+    function populateRules(rulesData) {
+      const container = document.getElementById('notificationRulesContainer');
+      container.innerHTML = '';
+      if (rulesData) {
+        rulesData.forEach(rule => addRuleCard(rule));
+      }
+    }
+
+    function insertPlaceholder(buttonElement, textToInsert) {
+      const textarea = buttonElement.closest('.rule-card').querySelector('textarea');
+      textarea.focus();
+      document.execCommand('insertText', false, textToInsert);
+    }
+
+    function addRuleCard(data = []) {
+      const container = document.getElementById('notificationRulesContainer');
+      const card = document.createElement('div');
+      card.className = 'rule-card deletable';
+      const val = (d) => d ?? '';
+
+      card.innerHTML = `
+        <div class="rule-grid">
+          <div class="input-group"><label>觸發天數</label><input type="number" value="${val(data[0])}"></div>
+          <div class="input-group"><label>狀態旗標</label><input type="text" value="${val(data[1])}"></div>
+          <div class="input-group"><label>信件主旨</label><input type="text" value="${val(data[2])}"></div>
+          <div><button type="button" class="btn btn-danger btn-delete">刪除</button></div>
+        </div>
+        <div class="full-width-input">
+          <label>信件內文</label>
+          <div class="placeholder-buttons-container">
+            <button type="button" class="placeholder-btn" onclick="insertPlaceholder(this, '{設備編號}')">{設備編號}</button>
+            <button type="button" class="placeholder-btn" onclick="insertPlaceholder(this, '{設備名稱}')">{設備名稱}</button>
+            <button type="button" class="placeholder-btn" onclick="insertPlaceholder(this, '{保管人}')">{保管人}</button>
+            <button type="button" class="placeholder-btn" onclick="insertPlaceholder(this, '{稱謂}')">{稱謂}</button>
+            <button type="button" class="placeholder-btn" onclick="insertPlaceholder(this, '{組別}')">{組別}</button>
+            <button type="button" class="placeholder-btn" onclick="insertPlaceholder(this, '{校正日期}')">{校正日期}</button>
+            <button type="button" class="placeholder-btn" onclick="insertPlaceholder(this, '{年度}')">{年度}</button>
+          </div>
+          <textarea rows="8">${val(data[3])}</textarea>
+          <div>
+            <div class="format-guide">簡易格式提示：用 <b>**文字**</b> 將文字變粗體。按 Enter 換行。</div>
+            <div class="placeholder-guide">
+                <strong>可用變數說明:</strong>
+                <ul>
+                    <li><code>{設備編號}</code> - 儀器/設備的唯一編號。</li>
+                    <li><code>{設備名稱}</code> - 儀器/設備的完整名稱。</li>
+                    <li><code>{保管人}</code> - 該儀器的保管人全名。</li>
+                    <li><code>{稱謂}</code> - 該儀器的保管人名字。</li>
+                    <li><code>{組別}</code> - 儀器所屬的組別。</li>
+                    <li><code>{校正日期}</code> - 預計校正日期。</li>
+                    <li><code>{年度}</code> - 目前的西元年份。</li>
+                </ul>
+            </div>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    }
+
+    function parseSimpleMarkup(text) {
+      if (!text) return '';
+      return text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\r\n/g, '\n')
+        .split('\n\n')
+        .map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>')
+        .join('');
+    }
+
+    // ====================================================================
+    // 模擬與測試
+    // ====================================================================
+    function updateTestInputs() {
+      if (!custodianChoices || !groupChoices) return;
+      const personnelData = getDataFromContainer('personnelMapTable', 'tr');
+      const groupData = getDataFromContainer('groupMapTable', 'tr');
+      const currentCustodianValue = custodianChoices.getValue(true);
+      const currentGroupValue = groupChoices.getValue(true);
+      const allCustodians = new Set(personnelData.map(row => row[0]).filter(Boolean));
+      instrumentMasterList.forEach(item => allCustodians.add(item.custodian));
+      const custodianOptions = [{
+        value: '',
+        label: '請選擇保管人',
+        placeholder: true
+      }];
+      allCustodians.forEach(name => {
+        if (name) custodianOptions.push({
+          value: name,
+          label: name
+        })
+      });
+      custodianChoices.setChoices(custodianOptions, 'value', 'label', true);
+      const allGroups = new Set(groupData.map(row => row[0]).filter(Boolean));
+      instrumentMasterList.forEach(item => allGroups.add(item.group));
+      const groupOptions = [{
+        value: '',
+        label: '請選擇組別',
+        placeholder: true
+      }];
+      allGroups.forEach(name => {
+        if (name) groupOptions.push({
+          value: name,
+          label: name
+        })
+      });
+      groupChoices.setChoices(groupOptions, 'value', 'label', true);
+      if (currentCustodianValue) custodianChoices.setChoiceByValue(String(currentCustodianValue));
+      if (currentGroupValue) groupChoices.setChoiceByValue(String(currentGroupValue));
+      const instrumentDatalist = document.getElementById('instrumentIdSuggestions');
+      instrumentDatalist.innerHTML = '';
+      instrumentMasterList.forEach(item => {
+        if (item.id) {
+          instrumentDatalist.innerHTML += `<option value="${item.id}">${item.deviceName || ''}</option>`
+        }
+      });
+    }
+
+    function runTestSimulation() {
+      const resultContainer = document.getElementById('testResultContainer');
+      resultContainer.innerHTML = '<div style="padding: 15px; background-color: #f4f5f7; border-radius: 4px;">正在與後端同步模擬中...</div>';
+      const currentSettings = {
+        globalCcEmails: document.getElementById('globalCcEmails').value.split(',').map(s => s.trim()).filter(Boolean),
+        exclusionList: document.getElementById('exclusionList').value.split('\n').map(s => s.trim()).filter(Boolean),
+        notificationRules: getDataFromContainer('notificationRulesContainer', '.rule-card'),
+        personnelMap: getDataFromContainer('personnelMapTable', 'tr'),
+        groupMap: getDataFromContainer('groupMapTable', 'tr'),
+        additionalCcMap: getDataFromContainer('additionalCcMapTable', 'tr')
+      };
+      const instrumentInput = document.getElementById('instrumentIdTest');
+      const foundInstrument = instrumentMasterList.find(item => item.id === instrumentInput.value.trim());
+      testData = {
+        instrumentId: instrumentInput.value.trim(),
+        deviceName: foundInstrument ? foundInstrument.deviceName : '',
+        daysUntilDue: parseInt(document.getElementById('daysUntilDueTest').value, 10),
+        custodianName: custodianChoices.getValue(true) || '',
+        groupName: groupChoices.getValue(true) || ''
+      };
+      if (!testData.instrumentId || isNaN(testData.daysUntilDue) || !testData.custodianName || !testData.groupName) {
+        resultContainer.innerHTML = '<div style="padding: 15px; background-color: #ffebe6; border: 1px solid #ffc9ba; color: #bf2600; border-radius: 4px;"><strong>錯誤：</strong>請填寫所有模擬用欄位。</div>';
+        return
+      }
+      google.script.run
+        .withSuccessHandler(displaySimulationResult)
+        .withFailureHandler(handleError)
+        .simulateNotificationLogic(currentSettings, testData)
+    }
+
+    function displaySimulationResult(response) {
+      const resultContainer = document.getElementById('testResultContainer');
+      let resultHTML = '';
+      switch (response.status) {
+        case 'success':
+          const {
+            triggeredRule,
+            recipients,
+            content
+          } = response.result;
+          const finalCcList = recipients.cc.join(', ') || '[無]';
+          const formattedBody = parseSimpleMarkup(content.body);
+          resultHTML = `
+        <div style="border: 1px solid #006644; border-radius: 4px; background-color: #e6f7f2;">
+          <div style="padding: 12px 15px; background-color: #ccefe5; border-bottom: 1px solid #99dcc9;">
+            <h3 style="margin:0; color: #004d33;">模擬結果</h3>
+          </div>
+          <div style="padding: 15px;">
+            <p style="margin: 0 0 15px 0;">儀器 <strong>${testData.instrumentId}</strong> 在距離校正 <strong>${testData.daysUntilDue}</strong> 天時，將觸發以下規則：</p>
+            <h4 style="color: #0052cc; border-bottom: 1px solid #dfe1e6; padding-bottom: 5px; margin-bottom: 10px;">觸發規則詳情</h4>
+            <p><strong>觸發天數：</strong> ${triggeredRule.days} 天內</p>
+            <p><strong>狀態旗標：</strong> ${triggeredRule.flag || '[未設定]'}</p>
+            <h4 style="color: #0052cc; border-bottom: 1px solid #dfe1e6; padding-bottom: 5px; margin-bottom: 10px; margin-top: 25px;">預計寄送內容 (變數已替換)</h4>
+            <p><strong>收件人 (To):</strong> <span style="background-color: #e9f2ff; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${recipients.to}</span></p>
+            <p><strong>副本 (CC):</strong> <span style="background-color: #e9f2ff; padding: 2px 6px; border-radius: 3px;">${finalCcList}</span></p>
+            <p><strong>信件主旨:</strong> ${content.subject}</p>
+            <p><strong>信件內文:</strong></p>
+            <div style="background-color: #f4f5f7; padding: 12px; border-radius: 3px; border: 1px solid #dfe1e6; line-height: 1.6;">${formattedBody}</div>
+          </div>
+        </div>`;
+          break;
+        case 'excluded':
+        case 'no_rule':
+          resultHTML = `<div style="padding: 15px; background-color: #deebff; border: 1px solid #b3d4ff; color: #0747a6; border-radius: 4px;"><strong>結果：</strong>${response.message}</div>`;
+          break;
+        case 'error':
+          handleError({
+            message: response.message
+          });
+          return;
+      }
+      resultContainer.innerHTML = resultHTML;
+    }
+  </script>
+</body>
+</html>
